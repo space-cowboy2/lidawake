@@ -54,8 +54,18 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
     let sudoItem = NSMenuItem(title: "", action: #selector(toggleSudoers), keyEquivalent: "")
     let loginItem = NSMenuItem(title: "Launch at Login", action: #selector(toggleLogin), keyEquivalent: "")
     var busy = false
+    var signalSources: [DispatchSourceSignal] = []
 
     func applicationDidFinishLaunching(_ note: Notification) {
+        // kill, pkill, Ctrl-C: AppKit does not call applicationWillTerminate for signals,
+        // so route them through a normal terminate. SIGKILL cannot be caught.
+        for sig in [SIGTERM, SIGINT, SIGHUP] {
+            signal(sig, SIG_IGN)
+            let src = DispatchSource.makeSignalSource(signal: sig, queue: .main)
+            src.setEventHandler { NSApp.terminate(nil) }
+            src.resume()
+            signalSources.append(src)
+        }
         let menu = NSMenu()
         menu.delegate = self
         menu.autoenablesItems = false
@@ -81,7 +91,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
 
     func menuWillOpen(_ menu: NSMenu) { refresh() }
 
-    /// Logout, restart, or kill: turn off silently if the passwordless rule exists (no prompt here).
+    /// Logout, restart, or a catchable kill signal: turn off silently if the passwordless rule exists (no prompt here).
     func applicationWillTerminate(_ note: Notification) {
         if sleepDisabled() { run("/usr/bin/sudo", ["-n", "/usr/bin/pmset", "-a", "disablesleep", "0"]) }
     }

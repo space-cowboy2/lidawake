@@ -27,6 +27,6 @@ This compiles `main.swift`, ad-hoc signs the app, quits any running copy, and re
 
 The sudoers rule allows only `pmset -a disablesleep 0` and `pmset -a disablesleep 1` without a password, and is checked with `visudo` before it is installed.
 
-Quitting from the menu turns keep-awake off first. If the app is killed another way, check with `pmset -g | grep SleepDisabled`.
+Quitting from the menu turns keep-awake off first. So does `kill`, `pkill`, logout and restart, as long as Skip Password Prompts is ticked (there is no password dialog at that point). A force kill (`kill -9`) or a crash cannot be caught: check with `pmset -g | grep SleepDisabled`.
 
 The menu also shows whether SSH (Remote Login) is reachable on port 22.
